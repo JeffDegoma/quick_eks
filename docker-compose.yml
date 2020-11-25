@@ -1,0 +1,15 @@
+version: '3.7'
+services:
+  terraform:
+    image: amazon/aws-cli:2.0.43
+    working_dir: /work
+    volumes:
+      - ./init.sh:/usr/local/bin/init.sh
+      - ./terraform:/work
+    entrypoint: bash
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+    command: 
+      -  init.sh

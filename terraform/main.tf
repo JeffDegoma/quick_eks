@@ -22,7 +22,7 @@ module "eks" {
     cluster_version = "1.17"
     
     vpc_id          = module.vpc.vpc_id 
-    subnets         = module.vpc.private_subnets
+    subnets         = module.vpc.public_subnets
     version         = "12.2.0"
     cluster_create_timeout = "1h"
     cluster_endpoint_private_access = true 
@@ -44,9 +44,8 @@ module "vpc" {
     name            =  "stellar_vpc"
     cidr            = "10.0.0.0/16"
 
-    azs             = ["ap-southeast-1a"] //more azs
-    private_subnets = ["10.0.1.0/24" ] //more private subnets
-    public_subnets  = ["10.0.101.0/24"] //more public subnets
+    azs             = ["ap-southeast-1a", "ap-southeast-1b"] //more azs
+    public_subnets  = ["10.0.101.0/24", "10.0.5.0/24"] //more public subnets
 
     enable_nat_gateway = false
     enable_vpn_gateway = false
@@ -92,14 +91,29 @@ resource "kubernetes_deployment" "stellar" {
             
             metadata { //metadata(required)
                 labels = {
-                    test  = "stellar-demo"
+                    test  = "stellar-client"
                 }
             }
 
             spec { //spec(required)
                 container {
-                    image = "image"
-                    name = "image name declaration"
+                    image = "180430814937.dkr.ecr.ap-southeast-1.amazonaws.com/docker_images:stellar_client"
+                    name = "node"
+
+                    resources {
+                        limits {
+                            cpu = "0.5"
+                            memory = "512Mi"
+                        }
+                        requests {
+                            cpu = "250m"
+                            memory = "50Mi"
+                        }
+                    }
+                }
+                container {
+                    image = "180430814937.dkr.ecr.ap-southeast-1.amazonaws.com/docker_images:stellar_server"
+                    name = "node"
 
                     resources {
                         limits {
@@ -113,9 +127,26 @@ resource "kubernetes_deployment" "stellar" {
                     }
                 }
             }
+
         }
     }
 
-
 }
 
+resource "kubernetes_service" "example" {
+  metadata {
+    name = "stellar-demo"
+  }
+  spec {
+    selector = {
+      test = "stellar-login"
+    }
+    port {
+      node_port   = 80
+      port        = 80
+      target_port = 80
+    }
+
+    type = "NodePort"
+  }
+}
