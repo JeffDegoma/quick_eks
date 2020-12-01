@@ -50,6 +50,11 @@ module "vpc" {
     enable_nat_gateway = false
     enable_vpn_gateway = false
     enable_dns_hostnames = true
+
+    public_subnet_tags = {
+        "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+        "kubernetes.io/role/elb"                      = "1"
+    }
     
 }
 
@@ -78,7 +83,7 @@ resource "kubernetes_deployment" "stellar" {
     //metadata
     //spec
     metadata {
-        name = "stellar-demo"
+        name = "stellar-login"
         labels = {
             test = "stellar-login"
         }
@@ -87,18 +92,24 @@ resource "kubernetes_deployment" "stellar" {
     spec {
         replicas = 2
 
+        selector {
+            match_labels = {
+                test = "stellar-login"
+            }
+        }
+
+
         template { //template(required)
-            
             metadata { //metadata(required)
                 labels = {
-                    test  = "stellar-client"
+                    test  = "stellar-login"
                 }
             }
 
             spec { //spec(required)
                 container {
                     image = "180430814937.dkr.ecr.ap-southeast-1.amazonaws.com/docker_images:stellar_client"
-                    name = "node"
+                    name = "stellar-client"
 
                     resources {
                         limits {
@@ -113,7 +124,7 @@ resource "kubernetes_deployment" "stellar" {
                 }
                 container {
                     image = "180430814937.dkr.ecr.ap-southeast-1.amazonaws.com/docker_images:stellar_server"
-                    name = "node"
+                    name = "stellar-server"
 
                     resources {
                         limits {
@@ -135,18 +146,17 @@ resource "kubernetes_deployment" "stellar" {
 
 resource "kubernetes_service" "example" {
   metadata {
-    name = "stellar-demo"
+    name = "stellar-login"
   }
   spec {
     selector = {
       test = "stellar-login"
     }
     port {
-      node_port   = 80
       port        = 80
       target_port = 80
     }
 
-    type = "NodePort"
+    type = "LoadBalancer"
   }
 }
