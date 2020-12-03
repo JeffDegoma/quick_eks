@@ -44,7 +44,7 @@ module "vpc" {
     name            =  "stellar_vpc"
     cidr            = "10.0.0.0/16"
 
-    azs             = ["ap-southeast-1a", "ap-southeast-1b"] //more azs
+    azs             = ["us-east-1a", "us-east-1b"] //more azs
     public_subnets  = ["10.0.101.0/24", "10.0.5.0/24"] //more public subnets
 
     enable_nat_gateway = false
@@ -79,7 +79,7 @@ provider "kubernetes" {
     version                = "~> 1.11"
 }
 
-resource "kubernetes_deployment" "stellar" {
+resource "kubernetes_deployment" "client" {
     //metadata
     //spec
     metadata {
@@ -90,7 +90,7 @@ resource "kubernetes_deployment" "stellar" {
     }
 
     spec {
-        replicas = 2
+        replicas = 1 //increase to scale up
 
         selector {
             match_labels = {
@@ -108,7 +108,7 @@ resource "kubernetes_deployment" "stellar" {
 
             spec { //spec(required)
                 container {
-                    image = "180430814937.dkr.ecr.ap-southeast-1.amazonaws.com/docker_images:stellar_client"
+                    image = "180430814937.dkr.ecr.us-east-1.amazonaws.com/docker_images:stellar_client"
                     name = "stellar-client"
 
                     resources {
@@ -122,8 +122,39 @@ resource "kubernetes_deployment" "stellar" {
                         }
                     }
                 }
+            }
+        }
+    }
+
+}
+
+resource "kubernetes_deployment" "backend" {
+      metadata {
+        name = "stellar-server"
+        labels = {
+            test = "stellar-login"
+        }
+    }
+
+    spec {
+        replicas = 2
+
+        selector {
+            match_labels = {
+                test = "stellar-login"
+            }
+        }
+
+        template { //template(required)
+            metadata { //metadata(required)
+                labels = {
+                    test  = "stellar-login"
+                }
+            }
+
+            spec { //spec(required)
                 container {
-                    image = "180430814937.dkr.ecr.ap-southeast-1.amazonaws.com/docker_images:stellar_server"
+                    image = "180430814937.dkr.ecr.us-east-1.amazonaws.com/docker_images:stellar_server"
                     name = "stellar-server"
 
                     resources {
@@ -138,10 +169,8 @@ resource "kubernetes_deployment" "stellar" {
                     }
                 }
             }
-
         }
     }
-
 }
 
 resource "kubernetes_service" "example" {

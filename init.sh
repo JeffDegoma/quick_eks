@@ -1,7 +1,5 @@
 #/bin/bash
-#install dependencies and terraform INSIDE an awscli docker container and
-#spin up a dev EKS infrastructure without the need to install terraform or python on local machine
-
+#install dependencies, terraform and kubectl INSIDE an awscli docker container
 
 #Tools
 yum install -y jq gzip nano tar git unzip wget
@@ -13,4 +11,9 @@ unzip  -o /tmp/terraform.zip
 
 chmod +x terraform && mv terraform /usr/local/bin/
 
-tail -f /dev/null
+#kubectl
+curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+mv ./kubectl /usr/local/bin/kubectl
+
+tail -f /dev/null #keeps container running

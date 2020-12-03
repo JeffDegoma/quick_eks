@@ -3,10 +3,11 @@ services:
   terraform:
     image: amazon/aws-cli:2.0.43
     working_dir: /work
+    container_name: eks_terraform_container 
     volumes:
       - ./init.sh:/usr/local/bin/init.sh
       - ./terraform:/work
-    entrypoint: bash
+    entrypoint: /bin/bash #override aws-cli entrypoint
     environment:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
