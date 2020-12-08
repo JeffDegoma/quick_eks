@@ -79,13 +79,102 @@ provider "kubernetes" {
     version                = "~> 1.11"
 }
 
-resource "kubernetes_deployment" "client" {
+
+
+resource "kubernetes_service" "node-service" {
+  metadata {
+    name = "server"
+    labels = {
+      "test" = "server"
+    }
+  }
+  spec {
+    selector = {
+        test = "node-pod" //bound to all pods labeled "node-pod"
+    }
+    port {
+      port =  3000
+      protocol = "TCP"
+    }
+
+  }
+}
+
+
+resource "kubernetes_deployment" "backend" {
+      metadata {
+        name = "node-deployment"
+        labels = {
+            test = "node-deployment"
+        }
+    }
+
+    spec {
+        replicas = 1 //increase to scale
+
+        selector {
+            match_labels = {
+                test = "node-pod"
+            }
+        }
+
+        template { //template(required)
+            metadata { //metadata(required)
+                labels = {
+                    test  = "node-pod"
+                }
+            }
+
+            spec { //spec(required)
+                container {
+                    image = "180430814937.dkr.ecr.us-east-1.amazonaws.com/docker_images:stellar_server"
+                    name = "stellar-server"
+                    port {
+                      container_port = 3000
+                    }
+
+                    resources {
+                        limits {
+                            cpu = "750m"
+                            memory = "512Mi"
+                        }
+                        requests {
+                            cpu = "300m"
+                            memory = "50Mi"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+//front-end service
+resource "kubernetes_service" "nginx-service" {
+  metadata {
+    name = "frontend-service"
+  }
+  spec {
+    selector = {
+      test = "frontend-pod" //bound to all pods "frontend-pod"
+    }
+    port {
+      port        = 80
+      target_port = 80
+    }
+
+    type = "LoadBalancer"
+  }
+}
+
+//front-end deployment
+resource "kubernetes_deployment" "front-end" {
     //metadata
     //spec
     metadata {
-        name = "stellar-login"
+        name = "frontend-deployment"
         labels = {
-            test = "stellar-login"
+            test = "frontend-deployment"
         }
     }
 
@@ -94,7 +183,7 @@ resource "kubernetes_deployment" "client" {
 
         selector {
             match_labels = {
-                test = "stellar-login"
+                test = "frontend-pod"
             }
         }
 
@@ -102,7 +191,7 @@ resource "kubernetes_deployment" "client" {
         template { //template(required)
             metadata { //metadata(required)
                 labels = {
-                    test  = "stellar-login"
+                    test  = "frontend-pod"
                 }
             }
 
@@ -113,11 +202,11 @@ resource "kubernetes_deployment" "client" {
 
                     resources {
                         limits {
-                            cpu = "0.5"
+                            cpu = "750m"
                             memory = "512Mi"
                         }
                         requests {
-                            cpu = "250m"
+                            cpu = "300m"
                             memory = "50Mi"
                         }
                     }
@@ -126,66 +215,4 @@ resource "kubernetes_deployment" "client" {
         }
     }
 
-}
-
-resource "kubernetes_deployment" "backend" {
-      metadata {
-        name = "stellar-server"
-        labels = {
-            test = "stellar-login"
-        }
-    }
-
-    spec {
-        replicas = 2
-
-        selector {
-            match_labels = {
-                test = "stellar-login"
-            }
-        }
-
-        template { //template(required)
-            metadata { //metadata(required)
-                labels = {
-                    test  = "stellar-login"
-                }
-            }
-
-            spec { //spec(required)
-                container {
-                    image = "180430814937.dkr.ecr.us-east-1.amazonaws.com/docker_images:stellar_server"
-                    name = "stellar-server"
-
-                    resources {
-                        limits {
-                            cpu = "0.5"
-                            memory = "512Mi"
-                        }
-                        requests {
-                            cpu = "250m"
-                            memory = "50Mi"
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-resource "kubernetes_service" "example" {
-  metadata {
-    name = "stellar-login"
-  }
-  spec {
-    selector = {
-      test = "stellar-login"
-    }
-    port {
-      port        = 80
-      target_port = 80
-    }
-
-    type = "LoadBalancer"
-  }
 }
