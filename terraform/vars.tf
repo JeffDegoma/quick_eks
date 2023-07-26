@@ -7,6 +7,6 @@ variable "region" {
 variable "cluster_name" {
     type = string
     description = "name of cluster"
-    default = "stellar_tech"
+    default = "april2023"
 }
 

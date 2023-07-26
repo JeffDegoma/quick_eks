@@ -44,7 +44,7 @@ terraform apply
 
 ## kube config
 ```
-aws eks update-kubeconfig --name stellar_tech --region us-east-1
+aws eks update-kubeconfig --name {NAME_OF_CLUSTER} --region us-east-1
 ```
 
 ## kubectl
